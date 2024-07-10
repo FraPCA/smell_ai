@@ -6,7 +6,7 @@ from functools import reduce
 
 import pandas as pd
 
-from components import detector
+from components import detector, graphic
 
 
 def merge_results(input_dir="../output", output_dir="../general_output"):
@@ -110,7 +110,7 @@ def get_python_files(path):
     return result
 
 
-def analyze_project(project_path, output_path=".", refactor=False):
+def analyze_project(project_path, output_path=".", refactor=False, Flag=True):
         
     col = ["filename", "function_name", "smell", "name_smell", "message"]
     r_col = ["filename", "function_name", "smell_name", "line"]
@@ -174,7 +174,10 @@ def analyze_project(project_path, output_path=".", refactor=False):
             empty_save.to_csv(output_path + "\Ref" + "/R_to_save.csv", index=False, mode='a')
 
     analyzed_time = pd.DataFrame(analysis_times, columns=["filename", "time"])
-    analyzed_time.to_csv(output_path + "/analyzed_time.csv", index=False, mode='a') 
+    analyzed_time.to_csv(output_path + "/analyzed_time.csv", index=False, mode='a')
+    graphic.graph(output_path, Flag)
+    graphic.grafico_barre(output_path, Flag)
+    graphic.grafico_dispersione(output_path, Flag)
 
 def projects_analysis(base_path='../input/projects', output_path='../output/projects_analysis',resume=False,refactor=False):
     start = time.time()
@@ -201,7 +204,7 @@ def projects_analysis(base_path='../input/projects', output_path='../output/proj
             os.makedirs(f"{output_path}/{dirname}")
         print(f"Analyzing {dirname}...")
         singleTimer = time.time()
-        analyze_project(new_path, f"{output_path}/{dirname}", refactor)
+        analyze_project(new_path, f"{output_path}/{dirname}", refactor, False)
         print(f"{dirname} analyzed successfully.")
         print(f"Exec Time completed in: {time.time() - singleTimer}")
         execution_log.write(dirname + "\n")
