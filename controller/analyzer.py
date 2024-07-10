@@ -53,6 +53,28 @@ def merge_refactor_results(input_dir="../output", output_dir="../general_output"
         combined_df.to_csv(os.path.join(output_dir, "overview_output.csv"), index=False)
     else:
         print("Error.")
+
+
+def merge_times(input_dir="../output", output_dir="../general_output"):
+    dataframes = []
+    for subdir, dirs, files in os.walk(input_dir):
+        if "analyzed_time.csv" in files:
+            df = pd.read_csv(os.path.join(subdir, "analyzed_time.csv"))
+            if len(df) > 0:
+                dataframes.append(df)
+
+    if dataframes:
+        combined_df = pd.concat(dataframes)
+        combined_df = combined_df[combined_df["filename"] != "filename"]
+        combined_df = combined_df.reset_index()
+
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        combined_df.to_csv(os.path.join(output_dir, "overview_times.csv"), index=False)
+    else:
+        print("Error.")
         
 def find_python_files(url):
     try:
@@ -95,6 +117,7 @@ def analyze_project(project_path, output_path=".", refactor=False):
     to_save = pd.DataFrame(columns=col)
     empty_save = pd.DataFrame(columns=r_col)
     
+    analysis_times = []
     
     #print("PATH OTTENUTO: " +project_path)
     
@@ -116,8 +139,13 @@ def analyze_project(project_path, output_path=".", refactor=False):
         if "tests/" not in filename:  # ignore test files
             try:
                 #print("Prima di detector inspect")
+                singleTimer = time.time()
+                print("Analizzo " + filename)
                 result = detector.inspect(filename, output_path, refactor)
                 to_save = to_save.merge(result, how='outer')
+                totalTime = time.time() - singleTimer
+                print("Tempo di esecuzione: " + str(totalTime))
+                analysis_times.append({"filename": filename, "time": totalTime})
                 
             except SyntaxError as e:
                 message = e.msg
@@ -145,6 +173,9 @@ def analyze_project(project_path, output_path=".", refactor=False):
         else:
             empty_save.to_csv(output_path + "\Ref" + "/R_to_save.csv", index=False, mode='a')
 
+    analyzed_time = pd.DataFrame(analysis_times, columns=["filename", "time"])
+    analyzed_time.to_csv(output_path + "/analyzed_time.csv", index=False, mode='a') 
+
 def projects_analysis(base_path='../input/projects', output_path='../output/projects_analysis',resume=False,refactor=False):
     start = time.time()
     if not os.path.exists(output_path):
@@ -169,8 +200,10 @@ def projects_analysis(base_path='../input/projects', output_path='../output/proj
         if not os.path.exists(f"{output_path}/{dirname}"):
             os.makedirs(f"{output_path}/{dirname}")
         print(f"Analyzing {dirname}...")
+        singleTimer = time.time()
         analyze_project(new_path, f"{output_path}/{dirname}", refactor)
         print(f"{dirname} analyzed successfully.")
+        print(f"Exec Time completed in: {time.time() - singleTimer}")
         execution_log.write(dirname + "\n")
     end = time.time()
     print(f"Sequential Exec Time completed in: {end - start}")
@@ -253,6 +286,7 @@ def main(args):
             os.makedirs(version)
         analyze_project(args.input, version, refactor)
     merge_results(args.output, args.output+"/overview")
+    merge_times(args.output, args.output+"/time")
     if refactor:
         merge_refactor_results(args.output, args.output + "/R_overview")
 
