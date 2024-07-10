@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 import torch
 import torch.nn.functional as F
@@ -120,13 +120,16 @@ def nan_equivalence_example():
     import numpy as np
     df = pd.DataFrame([1, None, 3])
     df_is_nan = df == np.nan
-
+    
+def nan_equivalence_example2():
+    if dit[1] is np.nan:
+        test = False
+    
 def empty_example():
     df = pd.DataFrame([])
     df['new_col_int'] = 0
     df['new_col_str'] = ''
-
-
+    
 
 def merge_api_parameter_not_explicitly_set_example():
     df1 = pd.DataFrame({'key': ['foo', 'bar', 'baz', 'foo'],
@@ -139,7 +142,10 @@ def merge_api_parameter_not_explicitly_set_example():
 def columns_and_datatype_not_explicitly_set_example():
     df = pd.read_csv('data.csv')
 
-
+def gradient_not_cleared_before_backward_propagation():
+    for count in range(test):
+        loss.backward()
+        ott.step()
 
 
 def deterministic_example():
@@ -155,6 +161,10 @@ def pytorch_call_method_misused_example(self, x):
     x = F.relu(self.fc2(x))
     x = self.fc3(x)
     return x
+
+def pytorch_call_method_misused_example2():
+    loss = self.forward(ab, c) + self.forward(d, e)
+
 
 
 def tensor_example(n):

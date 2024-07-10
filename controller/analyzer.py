@@ -1,9 +1,12 @@
-import os
-import pandas as pd
-from concurrent.futures import ThreadPoolExecutor
-import time
-from components import detector
 import argparse
+import os
+import time
+from concurrent.futures import ThreadPoolExecutor
+from functools import reduce
+
+import pandas as pd
+
+from components import detector
 
 
 def merge_results(input_dir="../output", output_dir="../general_output"):
@@ -11,6 +14,29 @@ def merge_results(input_dir="../output", output_dir="../general_output"):
     for subdir, dirs, files in os.walk(input_dir):
         if "to_save.csv" in files:
             df = pd.read_csv(os.path.join(subdir, "to_save.csv"))
+            if len(df) > 0:
+                dataframes.append(df)
+                
+
+    if dataframes:
+        combined_df = pd.concat(dataframes)
+        #rimuovi tutti le linee contenti filename,function_name,smell,name_smell,message tranne la prima
+        combined_df = combined_df[combined_df["filename"] != "filename"]
+        combined_df = combined_df.reset_index()
+
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        combined_df.to_csv(os.path.join(output_dir, "overview_output.csv"), index=False)
+    else:
+        print("Error.")
+
+def merge_refactor_results(input_dir="../output", output_dir="../general_output"):
+    dataframes = []
+    for subdir, dirs, files in os.walk(input_dir):
+        if "R_to_save.csv" in files:
+            df = pd.read_csv(os.path.join(subdir, "R_to_save.csv"))
             if len(df) > 0:
                 dataframes.append(df)
 
@@ -27,8 +53,7 @@ def merge_results(input_dir="../output", output_dir="../general_output"):
         combined_df.to_csv(os.path.join(output_dir, "overview_output.csv"), index=False)
     else:
         print("Error.")
-
-
+        
 def find_python_files(url):
     try:
         # Estraiamo il path della directory radice del progetto e lo salaviamo in 'root'
@@ -63,16 +88,37 @@ def get_python_files(path):
     return result
 
 
-def analyze_project(project_path, output_path="."):
+def analyze_project(project_path, output_path=".", refactor=False):
+        
     col = ["filename", "function_name", "smell", "name_smell", "message"]
+    r_col = ["filename", "function_name", "smell_name", "line"]
     to_save = pd.DataFrame(columns=col)
+    empty_save = pd.DataFrame(columns=r_col)
+    
+    
+    #print("PATH OTTENUTO: " +project_path)
+    
     filenames = get_python_files(project_path)
-
+    
+    if not any(File.endswith(".py") for File in filenames):
+        print(f"La cartella {project_path} non contiene alcun file analizzabile al suo interno. Inserisci un altro path in input.")
+        return
+    
+    if refactor:
+        if not os.path.exists(output_path + "\Ref"):
+            os.makedirs(output_path + "\Ref")
+    
+    #print("Ottenuti filename")
+    
+    #print(filenames)
+    
     for filename in filenames:
         if "tests/" not in filename:  # ignore test files
             try:
-                result = detector.inspect(filename, output_path)
+                #print("Prima di detector inspect")
+                result = detector.inspect(filename, output_path, refactor)
                 to_save = to_save.merge(result, how='outer')
+                
             except SyntaxError as e:
                 message = e.msg
                 error_path = output_path
@@ -91,9 +137,15 @@ def analyze_project(project_path, output_path="."):
                 continue
 
     to_save.to_csv(output_path + "/to_save.csv", index=False, mode='a')
+    if refactor:
+        if len(os.listdir(output_path + "\Ref")) != 0:
+            all_csvs = [pd.read_csv(output_path + "\Ref\\" + file) for file in os.listdir(output_path + "\Ref") if file.endswith(".csv")]
+            rdf = pd.concat(all_csvs, ignore_index=True)
+            rdf.to_csv(output_path + "\Ref" + "/R_to_save.csv", index=False, mode='a')
+        else:
+            empty_save.to_csv(output_path + "\Ref" + "/R_to_save.csv", index=False, mode='a')
 
-
-def projects_analysis(base_path='../input/projects', output_path='../output/projects_analysis',resume=False):
+def projects_analysis(base_path='../input/projects', output_path='../output/projects_analysis',resume=False,refactor=False):
     start = time.time()
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -101,7 +153,7 @@ def projects_analysis(base_path='../input/projects', output_path='../output/proj
     if not os.path.exists("../config/execution_log.txt"):
         #get abs path of execution_log.txt
         execution_log_path = os.path.abspath("../config/execution_log.txt")
-        print("Path:"+execution_log_path)
+        #print("Path:"+execution_log_path)
         open("../config/execution_log.txt", "w").close()
         resume = False
     execution_log = open("../config/execution_log.txt", "a")
@@ -117,15 +169,14 @@ def projects_analysis(base_path='../input/projects', output_path='../output/proj
         if not os.path.exists(f"{output_path}/{dirname}"):
             os.makedirs(f"{output_path}/{dirname}")
         print(f"Analyzing {dirname}...")
-
-        analyze_project(new_path, f"{output_path}/{dirname}")
+        analyze_project(new_path, f"{output_path}/{dirname}", refactor)
         print(f"{dirname} analyzed successfully.")
         execution_log.write(dirname + "\n")
     end = time.time()
     print(f"Sequential Exec Time completed in: {end - start}")
 
 
-def parallel_projects_analysis(base_path='../input/projects', output_path='../output/projects_analysis', max_workers=5,resume=False):
+def parallel_projects_analysis(base_path='../input/projects', output_path='../output/projects_analysis', max_workers=5,resume=False,refactor=False):
     start = time.time()
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -160,25 +211,50 @@ def main(args):
 
     if args.input is None or args.output is None:
         print("Please specify input and output folders")
-        exit(0)
+        exit(1)
+        
+    if not os.path.isdir(args.input):
+        print(f"La cartella {args.input} non esiste. Inserisci un altro path in input.")
+        exit(2)
+
+    if not os.path.isdir(args.output):
+        print(f"La cartella {args.output} non esiste. Inserisci un altro path di output.")
+        exit(3)
+        
     resume = True
 
     multiple = args.multiple
+    refactor = args.refactor
     if multiple:
         if not args.resume:
             resume = False
             clean(args.output)
         if args.parallel:
-            parallel_projects_analysis(args.input, args.output, args.max_workers,resume)
+            parallel_projects_analysis(args.input, args.output, args.max_workers,resume, refactor)
         else:
             if not os.path.exists(f"{args.output}"):
                 os.makedirs(f"{args.output}")
-            projects_analysis(args.input, args.output,resume)
+            projects_analysis(args.input, args.output,resume, refactor)
     else:
 
-        analyze_project(args.input, args.output)
+        fullpath = os.path.join(args.output, os.path.basename(os.path.normpath(args.input)))
+        if not os.path.exists(fullpath):
+            os.makedirs(fullpath)
+            version = os.path.join(fullpath , "1")
+            os.makedirs(version)
+        else:
+            dirpath = os.listdir(fullpath)
+            lastversion = 0
+            for dirname in dirpath:
+                vernumber = int(dirname)
+                if vernumber > lastversion:
+                    lastversion = vernumber
+            version = os.path.join(fullpath,str(lastversion + 1))
+            os.makedirs(version)
+        analyze_project(args.input, version, refactor)
     merge_results(args.output, args.output+"/overview")
-
+    if refactor:
+        merge_refactor_results(args.output, args.output + "/R_overview")
 
 
 if __name__ == "__main__":
@@ -190,6 +266,7 @@ if __name__ == "__main__":
     parser.add_argument("--parallel",default=False, type=bool, help="Enable parallel execution")
     parser.add_argument("--resume", default=False, type=bool, help="Continue previous execution")
     parser.add_argument("--multiple", default=False, type=bool, help="Enable multiple projects analysis")
+    parser.add_argument("--refactor", action = "store_true", help="Enable refactoring of found smells")
     args = parser.parse_args()
     main(args)
 
