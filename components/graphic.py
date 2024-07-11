@@ -47,7 +47,7 @@ def graph(out_path, Flag):
 def grafico_barre(out_path, Flag):
 
     path = out_path + "/to_save.csv"
-    print("PATH GRAFICO A BARRE" + path)
+    #print("PATH GRAFICO A BARRE" + path)
 
     # Leggere i dati dal file CSV
     df = pd.read_csv(path)
