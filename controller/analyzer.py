@@ -269,7 +269,7 @@ def main(args):
             return
         fullpath = os.path.join(args.output, os.path.basename(os.path.normpath(args.input)))
         if not os.path.exists(fullpath):
-            print("fullpath non esistente")
+            print("Non è stata trovata alcuna versione del progetto da confrontare")
             return
         if len(os.listdir(fullpath)) > 1:
             graphic.grafico_curva(fullpath)
