@@ -141,7 +141,89 @@ def grafico_dispersione(out_path, Flag):
         plt.show()
 
 
+def grafico_curva(path):
+
+    dirpath = os.listdir(path)
+    smell_counts = {}
+
+    for dirname in dirpath:
+        nuovo_path = os.path.join(path, dirname)
+        file_path = os.path.join(nuovo_path, "to_save.csv")
+        df = pd.read_csv(file_path,header = None)
+        total_smell = len(df.axes[0]) - 1
+        smell_counts[dirname] = total_smell
+
+    sorted_smell_counts = dict(sorted(smell_counts.items()))
+
+    # Crea il grafico a curva
+    plt.figure(figsize=(10, 6))
+    plt.plot(list(sorted_smell_counts.keys()), list(sorted_smell_counts.values()), marker='o')
+    plt.xlabel('Sottocartelle')
+    plt.ylabel('Numero Totale di Smell')
+    plt.title('Numero Totale di Smell per Sottocartella')
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    # Salvare il grafico come file immagine
+    output_image_path = 'version.png'
+    plt.savefig(output_image_path, bbox_inches='tight')
+    plt.show()
+
+def grafico_orizzontale(path):
     
+    
+    dirpath = os.listdir(path)
+    lastversion = 0
+    for dirname in dirpath:
+        vernumber = int(dirname)
+        if vernumber > lastversion:
+            lastversion = vernumber
+    
+    version = os.path.join(path,str(lastversion))
+    pen_version = os.path.join(path,str(lastversion - 1))
+
+    file_version = os.path.join(version, "to_save.csv")
+    filepen_version = os.path.join(pen_version, "to_save.csv")
+
+    df = pd.read_csv(filepen_version, header=None, names=["filename", "function_name", "smell", "name_smell", "message"])
+    df2 = pd.read_csv(file_version, header=None, names=["filename", "function_name", "smell", "name_smell", "message"])
+    smell_count = df['name_smell'].value_counts().to_dict()
+    smell_count2 = df2['name_smell'].value_counts().to_dict()
+
+    all_smells = set(smell_count.keys()).union(set(smell_count2.keys()))
+
+    smells = sorted(all_smells)
+    counts1 = [smell_count.get(smell, 0) for smell in smells]
+    counts2 = [smell_count2.get(smell, 0) for smell in smells]
+
+    
+
+    # Crea il grafico a barre orizzontali
+    fig, ax = plt.subplots(figsize=(10, 8))
+    bar_width = 0.4
+    y_pos = range(len(smells))
+
+    colors = cm.get_cmap('Pastel2')(range(len(smells)))
+
+    ax.barh(y_pos, counts1, bar_width, label="Penultima Versione", color=colors[0])
+    ax.barh([p + bar_width for p in y_pos], counts2, bar_width, label="Ultima versione", color=colors[1])
+    
+    ax.bar_label(ax.containers[0], label_type='edge', padding = 5)
+    ax.bar_label(ax.containers[1], label_type='edge', padding = 5)
+    
+    ax.set_yticks([p + bar_width / 2 for p in y_pos])
+    ax.set_yticklabels(smells, fontsize = 7)
+    ax.set_xlabel('Numero di occorrenze')
+    ax.set_title('Confronto dei Code Smells tra due cartelle')
+    ax.legend()
+    
+
+    # Aggiunge margini per assicurarsi che le etichette non vengano tagliate
+    plt.tight_layout()
+    # Salvare il grafico come file immagine
+    output_image_path = 'confronto_version.png'
+    plt.savefig(output_image_path, bbox_inches='tight')
+
+    plt.show()
 
 
 
