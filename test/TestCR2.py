@@ -94,7 +94,6 @@ class TestCR2:
         analyzer.main(args)
         
         if(os.path.exists(tempOutput / "project1" / "analyzed_time.csv") and os.path.exists(tempOutput / "project2" / "analyzed_time.csv")):
-            print("MI TROVO CON I PROJECRT")
             assert (os.path.exists(tempOutput / "time/overview_times.csv"))
         else:
             assert False
