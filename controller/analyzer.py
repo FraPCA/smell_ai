@@ -274,6 +274,7 @@ def main(args):
         if len(os.listdir(fullpath)) > 1:
             graphic.grafico_curva(fullpath)
             graphic.grafico_orizzontale(fullpath)
+            return
         else:
             print("Non è possibile effettuare il confronto avendo una sola versione del progetto")
             exit(6)

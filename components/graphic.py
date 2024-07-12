@@ -165,7 +165,7 @@ def grafico_curva(path):
     plt.grid(True)
     # Salvare il grafico come file immagine
     output_image_path = 'version.png'
-    plt.savefig(output_image_path, bbox_inches='tight')
+    plt.savefig(str(os.path.join(nuovo_path, output_image_path)), bbox_inches='tight')
     plt.show()
 
 def grafico_orizzontale(path):
@@ -220,8 +220,8 @@ def grafico_orizzontale(path):
     # Aggiunge margini per assicurarsi che le etichette non vengano tagliate
     plt.tight_layout()
     # Salvare il grafico come file immagine
-    output_image_path = 'confronto_version.png'
-    plt.savefig(output_image_path, bbox_inches='tight')
+    output_image_path = 'confronto_version.png' 
+    plt.savefig(str(os.path.join(version, output_image_path)), bbox_inches='tight')
 
     plt.show()
 
