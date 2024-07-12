@@ -217,4 +217,4 @@ class TestCR1:
         
         analyzer.main(compareArgs)
         fullpath = os.path.join(str(tempOutput), os.path.basename(os.path.normpath(args.input)))
-        assert (os.path.exists(str(fullpath) + "confronto_version.png")) and (os.path.exists(str(fullpath) + "version.png"))
+        assert (os.path.exists(str(fullpath) + "/3/confronto_version.png")) and (os.path.exists(str(fullpath) + "/3/version.png"))
