@@ -16,6 +16,8 @@ def parse():
     parser.add_argument("--resume", default=False, type=bool, help="Continue previous execution")
     parser.add_argument("--multiple", default=False, type=bool, help="Enable multiple projects analysis")
     parser.add_argument("--refactor", action = "store_true", help="Enable refactoring of found smells")
+    parser.add_argument("--compare",action="store_true", help="Enable comparison of different versions of a project")
+
     return parser
 
 class TestCR2:
