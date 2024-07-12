@@ -266,18 +266,17 @@ def main(args):
     if compare:
         if multiple:
             print("Si possono comparare più versioni solo di un singolo progetto")
-            return
+            exit(4)
         fullpath = os.path.join(args.output, os.path.basename(os.path.normpath(args.input)))
         if not os.path.exists(fullpath):
             print("Non è stata trovata alcuna versione del progetto da confrontare")
-            return
+            exit(5)
         if len(os.listdir(fullpath)) > 1:
             graphic.grafico_curva(fullpath)
             graphic.grafico_orizzontale(fullpath)
-            return
         else:
-            print("Non è possibile effettuare la comparazione")
-            return
+            print("Non è possibile effettuare il confronto avendo una sola versione del progetto")
+            exit(6)
     if multiple:
         if not args.resume:
             resume = False
