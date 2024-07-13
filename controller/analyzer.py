@@ -261,6 +261,23 @@ def main(args):
 
     multiple = args.multiple
     refactor = args.refactor
+    compare = args.compare
+
+    if compare:
+        if multiple:
+            print("Si possono comparare più versioni solo di un singolo progetto")
+            exit(4)
+        fullpath = os.path.join(args.output, os.path.basename(os.path.normpath(args.input)))
+        if not os.path.exists(fullpath):
+            print("Non è stata trovata alcuna versione del progetto da confrontare")
+            exit(5)
+        if len(os.listdir(fullpath)) > 1:
+            graphic.grafico_curva(fullpath)
+            graphic.grafico_orizzontale(fullpath)
+            return
+        else:
+            print("Non è possibile effettuare il confronto avendo una sola versione del progetto")
+            exit(6)
     if multiple:
         if not args.resume:
             resume = False
@@ -304,6 +321,7 @@ if __name__ == "__main__":
     parser.add_argument("--resume", default=False, type=bool, help="Continue previous execution")
     parser.add_argument("--multiple", default=False, type=bool, help="Enable multiple projects analysis")
     parser.add_argument("--refactor", action = "store_true", help="Enable refactoring of found smells")
+    parser.add_argument("--compare",action="store_true", help="Enable comparison of different versions of a project")
     args = parser.parse_args()
     main(args)
 
